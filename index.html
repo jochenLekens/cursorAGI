@@ -65,10 +65,23 @@
 
         async function getWeather(lat, lon) {
             try {
-                // Load API key from local config for development
-                const configResponse = await fetch('.config/keys.json');
-                const config = await configResponse.json();
-                
+                // Try both possible paths for the config
+                let config;
+                try {
+                    // Local development path
+                    const localResponse = await fetch('.config/keys.json');
+                    if (localResponse.ok) {
+                        config = await localResponse.json();
+                    } else {
+                        // GitHub Pages path
+                        const ghResponse = await fetch('cursorAGI/.config/keys.json');
+                        config = await ghResponse.json();
+                    }
+                } catch (error) {
+                    console.error('Config loading error:', error);
+                    throw new Error('Could not load config');
+                }
+
                 const weatherResponse = await fetch(
                     `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${config.OPENWEATHER_API_KEY}`
                 );
