@@ -22,6 +22,14 @@ jobs:
             GOOGLE_STREETVIEW_API_KEY: '${{ secrets.GOOGLE_STREETVIEW_API_KEY }}'
           };" > config.js
           
+      - name: Debug config (safely)
+        run: |
+          echo "Config file exists: $(test -f config.js && echo 'yes' || echo 'no')"
+          echo "Config file size: $(wc -c < config.js) bytes"
+          echo "First line of config: $(head -n 1 config.js)"
+          echo "Contains placeholder OPENWEATHER: $(grep -c 'OPENWEATHER_API_KEY_HERE' config.js || true)"
+          echo "Contains placeholder STREETVIEW: $(grep -c 'STREETVIEW_API_KEY_HERE' config.js || true)"
+          
       - name: Setup Pages
         uses: actions/configure-pages@v4
         
