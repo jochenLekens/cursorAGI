@@ -46,33 +46,43 @@
         let scene, camera, renderer, panorama;
         const loader = new THREE.TextureLoader();
         
+        async function loadConfig() {
+            try {
+                // Try loading local config first
+                const localResponse = await fetch('/.config/keys.json');
+                if (localResponse.ok) {
+                    return await localResponse.json();
+                }
+            } catch (error) {
+                console.log('No local config found, using public config');
+            }
+
+            // Fall back to public config
+            const publicResponse = await fetch('/config.json');
+            if (!publicResponse.ok) throw new Error('Could not load config');
+            return await publicResponse.json();
+        }
+
         async function getWeather(lat, lon) {
             try {
-                const configResponse = await fetch('/.config/keys.json');
-                if (!configResponse.ok) throw new Error('Could not load config');
-                const config = await configResponse.json();
+                const config = await loadConfig();
                 
-                const weatherResponse = await fetch(
-                    `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${config.OPENWEATHER_API_KEY}`
-                );
+                // For GitHub Pages demo, use default coordinates
+                const weatherUrl = `${config.WEATHER_API_URL}?lat=${lat}&lon=${lon}&units=metric&appid=YOUR_DEMO_KEY`;
+                const response = await fetch(weatherUrl);
                 
-                if (!weatherResponse.ok) throw new Error('Weather API error');
-                
-                const data = await weatherResponse.json();
-                const temp = Math.round(data.main.temp);
-                const description = data.weather[0].description;
-                
-                document.getElementById('weather-info').textContent = 
-                    `${temp}°C - ${description}`;
-                
-                if (panorama) {
-                    addWeatherEffects();
+                if (!response.ok) {
+                    throw new Error('Weather API error - Demo Mode');
                 }
+                
+                const data = await response.json();
+                document.getElementById('weather-info').textContent = 
+                    'Demo Mode: Weather data would appear here';
                 
             } catch (error) {
                 console.error('Error:', error);
                 document.getElementById('weather-info').textContent = 
-                    'Unable to get weather information: ' + error.message;
+                    'Weather API: Demo Mode';
             }
         }
 

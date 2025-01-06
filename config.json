@@ -1,0 +1,9 @@
+{
+    "WEATHER_API_URL": "https://api.openweathermap.org/data/2.5/weather",
+    "STREETVIEW_API_URL": "https://maps.googleapis.com/maps/api/streetview",
+    "STREETVIEW_METADATA_URL": "https://maps.googleapis.com/maps/api/streetview/metadata",
+    "DEFAULT_COORDINATES": {
+        "LAT": 40.7580,
+        "LON": -73.9855
+    }
+} 
