@@ -15,8 +15,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Create config
+      - name: Create config directory and file
         run: |
+          mkdir -p .config
           echo '{
             "OPENWEATHER_API_KEY": "${{ secrets.OPENWEATHER_API_KEY }}",
             "GOOGLE_STREETVIEW_API_KEY": "${{ secrets.GOOGLE_STREETVIEW_API_KEY }}"
