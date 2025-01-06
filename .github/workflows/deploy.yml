@@ -1,1 +1,31 @@
- 
+name: Deploy to GitHub Pages
+on:
+  push:
+    branches: [ master ]
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Create config
+        run: |
+          echo '{
+            "OPENWEATHER_API_KEY": "${{ secrets.OPENWEATHER_API_KEY }}",
+            "GOOGLE_STREETVIEW_API_KEY": "${{ secrets.GOOGLE_STREETVIEW_API_KEY }}"
+          }' > .config/keys.json
+          
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+        
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+          
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4 
