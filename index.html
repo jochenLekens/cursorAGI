@@ -43,13 +43,14 @@
     <div class="loading">Loading your world... 🌍</div>
 
     <script>
-        let scene, camera, renderer, panorama;
-        const loader = new THREE.TextureLoader();
-        
+        // API keys will be replaced during build
         const config = {
             OPENWEATHER_API_KEY: 'OPENWEATHER_API_KEY_HERE',
             GOOGLE_STREETVIEW_API_KEY: 'STREETVIEW_API_KEY_HERE'
         };
+
+        let scene, camera, renderer, panorama;
+        const loader = new THREE.TextureLoader();
         
         async function getWeather(lat, lon) {
             try {
@@ -66,6 +67,10 @@
                 document.getElementById('weather-info').textContent = 
                     `${temp}°C - ${description}`;
                 
+                if (panorama) {
+                    addWeatherEffects();
+                }
+                
             } catch (error) {
                 console.error('Error:', error);
                 document.getElementById('weather-info').textContent = 
@@ -74,9 +79,6 @@
         }
 
         async function init(lat, lon) {
-            const configResponse = await fetch('/.config/keys.json');
-            const config = await configResponse.json();
-            
             scene = new THREE.Scene();
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
             renderer = new THREE.WebGLRenderer();
@@ -110,52 +112,12 @@
             document.addEventListener('mousemove', onMouseMove);
             window.addEventListener('resize', onWindowResize);
             
-            function animate() {
-                requestAnimationFrame(animate);
-                renderer.render(scene, camera);
-            }
             animate();
         }
 
-        function addWeatherEffects() {
-            const weatherType = document.getElementById('weather-info').textContent;
-            
-            if (weatherType.includes('rain')) {
-                createRaindrops();
-            } else if (weatherType.includes('snow')) {
-                createSnowflakes();
-            } else if (weatherType.includes('cloud')) {
-                createClouds();
-            }
-        }
-
-        function createRaindrops() {
-            const rainGeometry = new THREE.BufferGeometry();
-            const rainCount = 15000;
-            const positions = new Float32Array(rainCount * 3);
-            
-            for(let i = 0; i < rainCount * 3; i += 3) {
-                positions[i] = Math.random() * 1000 - 500;
-                positions[i + 1] = Math.random() * 1000 - 500;
-                positions[i + 2] = Math.random() * 1000 - 500;
-            }
-            
-            rainGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-            const rainMaterial = new THREE.PointsMaterial({
-                color: 0xaaaaaa,
-                size: 0.1,
-                transparent: true
-            });
-            
-            const rain = new THREE.Points(rainGeometry, rainMaterial);
-            scene.add(rain);
-            
-            gsap.to(rain.rotation, {
-                y: Math.PI * 2,
-                duration: 4,
-                repeat: -1,
-                ease: "none"
-            });
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
         }
 
         function onMouseMove(event) {
