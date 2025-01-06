@@ -5,7 +5,7 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    environment:
+    environment: 
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     permissions:
@@ -15,20 +15,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
+      - name: Debug secrets (safely)
+        run: |
+          echo "OPENWEATHER_API_KEY defined: ${{ secrets.OPENWEATHER_API_KEY != '' }}"
+          echo "GOOGLE_STREETVIEW_API_KEY defined: ${{ secrets.GOOGLE_STREETVIEW_API_KEY != '' }}"
+      
       - name: Create config.js
+        env:
+          WEATHER_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
+          STREET_KEY: ${{ secrets.GOOGLE_STREETVIEW_API_KEY }}
         run: |
           echo "const config = {
-            OPENWEATHER_API_KEY: '${{ secrets.OPENWEATHER_API_KEY }}',
-            GOOGLE_STREETVIEW_API_KEY: '${{ secrets.GOOGLE_STREETVIEW_API_KEY }}'
+            OPENWEATHER_API_KEY: '${WEATHER_KEY}',
+            GOOGLE_STREETVIEW_API_KEY: '${STREET_KEY}'
           };" > config.js
           
       - name: Debug config (safely)
         run: |
           echo "Config file exists: $(test -f config.js && echo 'yes' || echo 'no')"
           echo "Config file size: $(wc -c < config.js) bytes"
-          echo "First line of config: $(head -n 1 config.js)"
-          echo "Contains placeholder OPENWEATHER: $(grep -c 'OPENWEATHER_API_KEY_HERE' config.js || true)"
-          echo "Contains placeholder STREETVIEW: $(grep -c 'STREETVIEW_API_KEY_HERE' config.js || true)"
+          echo "Keys in config: $(grep -o 'API_KEY' config.js | wc -l)"
           
       - name: Setup Pages
         uses: actions/configure-pages@v4
