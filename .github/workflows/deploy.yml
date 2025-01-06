@@ -15,15 +15,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Create config directory and file
+      - name: Create config file
         run: |
-          mkdir -p .config
           echo '{
             "OPENWEATHER_API_KEY": "${{ secrets.OPENWEATHER_API_KEY }}",
             "GOOGLE_STREETVIEW_API_KEY": "${{ secrets.GOOGLE_STREETVIEW_API_KEY }}"
-          }' > .config/keys.json
-          ls -la .config/
-          cat .config/keys.json
+          }' > keys.json
+          ls -la
+          cat keys.json
           
       - name: Setup Pages
         uses: actions/configure-pages@v4
