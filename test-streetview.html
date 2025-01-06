@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Street View API Test</title>
+</head>
+<body>
+    <h2>Street View API Test</h2>
+    <div id="result"></div>
+    <div id="coordinates"></div>
+    <img id="streetview" style="max-width: 100%; margin-top: 20px;">
+
+    <script>
+        async function testStreetViewAPI(lat, lon) {
+            try {
+                // Load config
+                const configResponse = await fetch('/.config/keys.json');
+                const config = await configResponse.json();
+                
+                // First, check if Street View is available at this location
+                const metadataUrl = `https://maps.googleapis.com/maps/api/streetview/metadata?location=${lat},${lon}&key=${config.GOOGLE_STREETVIEW_API_KEY}`;
+                
+                const metadataResponse = await fetch(metadataUrl);
+                const metadata = await metadataResponse.json();
+                
+                document.getElementById('coordinates').innerHTML = 
+                    `Testing location: ${lat}, ${lon}`;
+
+                if (metadata.status === 'OK') {
+                    // Street View exists, try to load it
+                    const url = `https://maps.googleapis.com/maps/api/streetview?size=600x300&location=${lat},${lon}&key=${config.GOOGLE_STREETVIEW_API_KEY}`;
+                    
+                    document.getElementById('streetview').src = url;
+                    document.getElementById('result').innerHTML = 
+                        'Street View API: SUCCESS<br>Image available at this location';
+                } else {
+                    document.getElementById('result').innerHTML = 
+                        `Street View API: NO IMAGERY<br>Status: ${metadata.status}<br>Try a different location`;
+                }
+                
+            } catch (error) {
+                document.getElementById('result').innerHTML = 
+                    `Street View API: ERROR<br>${error.message}`;
+            }
+        }
+
+        // Get user's location and test
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                position => {
+                    testStreetViewAPI(position.coords.latitude, position.coords.longitude);
+                },
+                error => {
+                    document.getElementById('result').innerHTML = 
+                        'Error getting location: ' + error.message;
+                }
+            );
+        }
+    </script>
+</body>
+</html> 

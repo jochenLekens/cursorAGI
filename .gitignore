@@ -1,0 +1,5 @@
+# Ignore real keys file
+.config/keys.json
+
+# Don't ignore the example
+!.config/keys.example.json 

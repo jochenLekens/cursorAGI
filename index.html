@@ -4,8 +4,189 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>cursorAGI</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        canvas { width: 100vw; height: 100vh; }
+        #info {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            font-family: Arial, sans-serif;
+            z-index: 100;
+            background: rgba(0,0,0,0.5);
+            padding: 10px;
+            border-radius: 5px;
+            opacity: 0;
+            transition: opacity 1s ease;
+        }
+        .loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2em;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+    </style>
 </head>
 <body>
-    <h1>Hello, World!</h1>
+    <div id="info">
+        <h2>Current Location</h2>
+        <div id="weather-info">Loading weather...</div>
+        <div id="location-info">Detecting location...</div>
+    </div>
+    <div class="loading">Loading your world... 🌍</div>
+
+    <script>
+        let scene, camera, renderer, panorama;
+        const loader = new THREE.TextureLoader();
+        
+        async function getWeather(lat, lon) {
+            try {
+                const configResponse = await fetch('/.config/keys.json');
+                if (!configResponse.ok) throw new Error('Could not load config');
+                const config = await configResponse.json();
+                
+                const weatherResponse = await fetch(
+                    `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${config.OPENWEATHER_API_KEY}`
+                );
+                
+                if (!weatherResponse.ok) throw new Error('Weather API error');
+                
+                const data = await weatherResponse.json();
+                const temp = Math.round(data.main.temp);
+                const description = data.weather[0].description;
+                
+                document.getElementById('weather-info').textContent = 
+                    `${temp}°C - ${description}`;
+                
+                if (panorama) {
+                    addWeatherEffects();
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('weather-info').textContent = 
+                    'Unable to get weather information: ' + error.message;
+            }
+        }
+
+        async function init(lat, lon) {
+            const configResponse = await fetch('/.config/keys.json');
+            const config = await configResponse.json();
+            
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            const geometry = new THREE.SphereGeometry(500, 60, 40);
+            geometry.scale(-1, 1, 1);
+            
+            const heading = Math.floor(Math.random() * 360);
+            const streetViewUrl = `https://maps.googleapis.com/maps/api/streetview?size=4096x2048&location=${lat},${lon}&heading=${heading}&pitch=0&key=${config.GOOGLE_STREETVIEW_API_KEY}`;
+            
+            loader.load(streetViewUrl, function(texture) {
+                const material = new THREE.MeshBasicMaterial({ map: texture });
+                panorama = new THREE.Mesh(geometry, material);
+                scene.add(panorama);
+                
+                document.querySelector('.loading').style.display = 'none';
+                document.getElementById('info').style.opacity = '1';
+                
+                gsap.to(camera.rotation, {
+                    y: Math.PI * 2,
+                    duration: 30,
+                    repeat: -1,
+                    ease: "none"
+                });
+                
+                addWeatherEffects();
+            });
+
+            document.addEventListener('mousemove', onMouseMove);
+            window.addEventListener('resize', onWindowResize);
+            
+            function animate() {
+                requestAnimationFrame(animate);
+                renderer.render(scene, camera);
+            }
+            animate();
+        }
+
+        function addWeatherEffects() {
+            const weatherType = document.getElementById('weather-info').textContent;
+            
+            if (weatherType.includes('rain')) {
+                createRaindrops();
+            } else if (weatherType.includes('snow')) {
+                createSnowflakes();
+            } else if (weatherType.includes('cloud')) {
+                createClouds();
+            }
+        }
+
+        function createRaindrops() {
+            const rainGeometry = new THREE.BufferGeometry();
+            const rainCount = 15000;
+            const positions = new Float32Array(rainCount * 3);
+            
+            for(let i = 0; i < rainCount * 3; i += 3) {
+                positions[i] = Math.random() * 1000 - 500;
+                positions[i + 1] = Math.random() * 1000 - 500;
+                positions[i + 2] = Math.random() * 1000 - 500;
+            }
+            
+            rainGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            const rainMaterial = new THREE.PointsMaterial({
+                color: 0xaaaaaa,
+                size: 0.1,
+                transparent: true
+            });
+            
+            const rain = new THREE.Points(rainGeometry, rainMaterial);
+            scene.add(rain);
+            
+            gsap.to(rain.rotation, {
+                y: Math.PI * 2,
+                duration: 4,
+                repeat: -1,
+                ease: "none"
+            });
+        }
+
+        function onMouseMove(event) {
+            const movementX = event.movementX || event.mozMovementX || event.webkitMovementX || 0;
+            const movementY = event.movementY || event.mozMovementY || event.webkitMovementY || 0;
+            
+            camera.rotation.y += movementX * 0.002;
+            camera.rotation.x = Math.max(Math.min(camera.rotation.x + movementY * 0.002, Math.PI/2), -Math.PI/2);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                position => {
+                    init(position.coords.latitude, position.coords.longitude);
+                    getWeather(position.coords.latitude, position.coords.longitude);
+                },
+                error => {
+                    console.error('Error getting location:', error);
+                    document.querySelector('.loading').textContent = 'Unable to access location 😢';
+                }
+            );
+        }
+    </script>
 </body>
 </html> 

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Weather API Test</title>
+</head>
+<body>
+    <h2>Weather API Test</h2>
+    <div id="result"></div>
+
+    <script>
+        async function testWeatherAPI() {
+            try {
+                // Load config
+                const configResponse = await fetch('/.config/keys.json');
+                const config = await configResponse.json();
+                
+                // Test coordinates (New York)
+                const lat = 40.7128;
+                const lon = -74.0060;
+                
+                // Test API call
+                const response = await fetch(
+                    `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${config.OPENWEATHER_API_KEY}`
+                );
+                
+                const data = await response.json();
+                document.getElementById('result').innerHTML = 
+                    `Weather API: SUCCESS<br>
+                     Temperature: ${data.main.temp}°C<br>
+                     Weather: ${data.weather[0].description}`;
+                
+            } catch (error) {
+                document.getElementById('result').innerHTML = 
+                    `Weather API: ERROR<br>${error.message}`;
+            }
+        }
+        testWeatherAPI();
+    </script>
+</body>
+</html> 

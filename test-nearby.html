@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Street View Availability Test</title>
+</head>
+<body>
+    <h2>Street View Availability Test</h2>
+    <div id="result"></div>
+    <div id="coordinates"></div>
+    <div id="nearest"></div>
+    <img id="streetview" style="max-width: 100%; margin-top: 20px;">
+
+    <script>
+        async function testNearbyStreetView(lat, lon) {
+            try {
+                const configResponse = await fetch('/.config/keys.json');
+                const config = await configResponse.json();
+                
+                // Test original location
+                document.getElementById('coordinates').innerHTML = 
+                    `Your location: ${lat}, ${lon}`;
+
+                // Test a 100-meter radius around the location
+                for(let offset = 0.001; offset <= 0.005; offset += 0.001) {
+                    const testPoints = [
+                        [lat + offset, lon],
+                        [lat - offset, lon],
+                        [lat, lon + offset],
+                        [lat, lon - offset]
+                    ];
+
+                    for(const [testLat, testLon] of testPoints) {
+                        const metadataUrl = 
+                            `https://maps.googleapis.com/maps/api/streetview/metadata?location=${testLat},${testLon}&key=${config.GOOGLE_STREETVIEW_API_KEY}`;
+                        
+                        const metadataResponse = await fetch(metadataUrl);
+                        const metadata = await metadataResponse.json();
+
+                        if(metadata.status === 'OK') {
+                            document.getElementById('nearest').innerHTML = 
+                                `Found Street View at: ${testLat}, ${testLon}<br>
+                                Approximately ${(offset * 111000).toFixed(0)} meters from your location`;
+                            
+                            const url = `https://maps.googleapis.com/maps/api/streetview?size=600x300&location=${testLat},${testLon}&key=${config.GOOGLE_STREETVIEW_API_KEY}`;
+                            document.getElementById('streetview').src = url;
+                            return;
+                        }
+                    }
+                }
+                
+                document.getElementById('result').innerHTML = 
+                    'No Street View imagery found within 500 meters of your location';
+                
+            } catch (error) {
+                document.getElementById('result').innerHTML = 
+                    `Error: ${error.message}`;
+            }
+        }
+
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                position => {
+                    testNearbyStreetView(position.coords.latitude, position.coords.longitude);
+                },
+                error => {
+                    document.getElementById('result').innerHTML = 
+                        'Error getting location: ' + error.message;
+                }
+            );
+        }
+    </script>
+</body>
+</html> 
