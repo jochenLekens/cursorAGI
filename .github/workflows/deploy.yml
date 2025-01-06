@@ -12,28 +12,41 @@ jobs:
       contents: write
       pages: write
       id-token: write
+    env:
+      WEATHER_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
+      STREET_KEY: ${{ secrets.GOOGLE_STREETVIEW_API_KEY }}
     steps:
       - uses: actions/checkout@v4
       
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
+      - name: Debug environment (safely)
+        run: |
+          echo "Weather key length: ${#WEATHER_KEY}"
+          echo "Street key length: ${#STREET_KEY}"
           
       - name: Create replace script
         run: |
           echo "const fs = require('fs');
           const html = fs.readFileSync('index.html', 'utf8');
+          
+          if (!process.env.WEATHER_KEY || !process.env.STREET_KEY) {
+            console.error('Missing required environment variables');
+            process.exit(1);
+          }
+          
           const replaced = html
-            .replace(/OPENWEATHER_API_KEY_HERE/g, process.env.OPENWEATHER_API_KEY)
-            .replace(/STREETVIEW_API_KEY_HERE/g, process.env.STREETVIEW_API_KEY);
+            .replace(/OPENWEATHER_API_KEY_HERE/g, process.env.WEATHER_KEY)
+            .replace(/STREETVIEW_API_KEY_HERE/g, process.env.STREET_KEY);
+          
           fs.writeFileSync('index.html', replaced);
-          console.log('Replacements complete');" > replace.js
+          
+          // Verify replacements without exposing keys
+          const final = fs.readFileSync('index.html', 'utf8');
+          console.log('Still contains OPENWEATHER_API_KEY_HERE:', 
+            final.includes('OPENWEATHER_API_KEY_HERE'));
+          console.log('Still contains STREETVIEW_API_KEY_HERE:', 
+            final.includes('STREETVIEW_API_KEY_HERE'));" > replace.js
           
       - name: Inject secrets
-        env:
-          OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
-          STREETVIEW_API_KEY: ${{ secrets.GOOGLE_STREETVIEW_API_KEY }}
         run: node replace.js
           
       - name: Setup Pages
