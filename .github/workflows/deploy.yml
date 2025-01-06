@@ -17,8 +17,18 @@ jobs:
       
       - name: Inject secrets into HTML
         run: |
-          sed -i "s/OPENWEATHER_API_KEY_HERE/${{ secrets.OPENWEATHER_API_KEY }}/g" index.html
-          sed -i "s/STREETVIEW_API_KEY_HERE/${{ secrets.GOOGLE_STREETVIEW_API_KEY }}/g" index.html
+          # Create a temporary file
+          cp index.html temp.html
+          # Replace the placeholders
+          cat temp.html | \
+          sed "s/OPENWEATHER_API_KEY_HERE/${{ secrets.OPENWEATHER_API_KEY }}/g" | \
+          sed "s/STREETVIEW_API_KEY_HERE/${{ secrets.GOOGLE_STREETVIEW_API_KEY }}/g" \
+          > index.html
+          # Clean up
+          rm temp.html
+          # Verify replacements (hide keys)
+          echo "Checking for remaining placeholders:"
+          grep -c "API_KEY_HERE" index.html || true
           
       - name: Setup Pages
         uses: actions/configure-pages@v4
