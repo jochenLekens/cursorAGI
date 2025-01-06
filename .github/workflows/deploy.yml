@@ -15,26 +15,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Debug secrets (safely)
-        run: |
-          echo "OPENWEATHER_API_KEY defined: ${{ secrets.OPENWEATHER_API_KEY != '' }}"
-          echo "GOOGLE_STREETVIEW_API_KEY defined: ${{ secrets.GOOGLE_STREETVIEW_API_KEY != '' }}"
-      
       - name: Create config.js
-        env:
-          WEATHER_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
-          STREET_KEY: ${{ secrets.GOOGLE_STREETVIEW_API_KEY }}
         run: |
-          echo "const config = {
-            OPENWEATHER_API_KEY: '${WEATHER_KEY}',
-            GOOGLE_STREETVIEW_API_KEY: '${STREET_KEY}'
-          };" > config.js
+          echo "window.WEATHER_API_KEY = '${{ secrets.OPENWEATHER_API_KEY }}';
+          window.STREETVIEW_API_KEY = '${{ secrets.GOOGLE_STREETVIEW_API_KEY }}';" > config.js
           
-      - name: Debug config (safely)
+      - name: Update index.html
         run: |
-          echo "Config file exists: $(test -f config.js && echo 'yes' || echo 'no')"
-          echo "Config file size: $(wc -c < config.js) bytes"
-          echo "Keys in config: $(grep -o 'API_KEY' config.js | wc -l)"
+          sed -i 's/config\.OPENWEATHER_API_KEY/window.WEATHER_API_KEY/g' index.html
+          sed -i 's/config\.GOOGLE_STREETVIEW_API_KEY/window.STREETVIEW_API_KEY/g' index.html
+          
+      - name: Debug files
+        run: |
+          echo "Config.js contents (masked):"
+          sed 's/[A-Za-z0-9]\{20,\}/***MASKED***/g' config.js
+          echo "Index.html API references:"
+          grep -o "window\.[A-Z_]*" index.html || true
           
       - name: Setup Pages
         uses: actions/configure-pages@v4
