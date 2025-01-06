@@ -46,29 +46,13 @@
         let scene, camera, renderer, panorama;
         const loader = new THREE.TextureLoader();
         
-        async function loadConfig() {
-            try {
-                // Try loading local config first
-                const localResponse = await fetch('/.config/keys.json');
-                if (localResponse.ok) {
-                    return await localResponse.json();
-                }
-            } catch (error) {
-                console.log('No local config found, using public config');
-            }
-
-            // Fall back to public config
-            const publicResponse = await fetch('/config.json');
-            if (!publicResponse.ok) throw new Error('Could not load config');
-            return await publicResponse.json();
-        }
-
+        const config = {
+            OPENWEATHER_API_KEY: 'OPENWEATHER_API_KEY_HERE',
+            GOOGLE_STREETVIEW_API_KEY: 'STREETVIEW_API_KEY_HERE'
+        };
+        
         async function getWeather(lat, lon) {
             try {
-                // Load config from root
-                const configResponse = await fetch('keys.json');
-                const config = await configResponse.json();
-                
                 const weatherResponse = await fetch(
                     `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${config.OPENWEATHER_API_KEY}`
                 );

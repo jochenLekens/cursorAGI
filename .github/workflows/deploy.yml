@@ -15,14 +15,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Create config file
+      - name: Inject secrets into HTML
         run: |
-          echo '{
-            "OPENWEATHER_API_KEY": "${{ secrets.OPENWEATHER_API_KEY }}",
-            "GOOGLE_STREETVIEW_API_KEY": "${{ secrets.GOOGLE_STREETVIEW_API_KEY }}"
-          }' > keys.json
-          ls -la
-          cat keys.json
+          sed -i "s/OPENWEATHER_API_KEY_HERE/${{ secrets.OPENWEATHER_API_KEY }}/g" index.html
+          sed -i "s/STREETVIEW_API_KEY_HERE/${{ secrets.GOOGLE_STREETVIEW_API_KEY }}/g" index.html
           
       - name: Setup Pages
         uses: actions/configure-pages@v4
